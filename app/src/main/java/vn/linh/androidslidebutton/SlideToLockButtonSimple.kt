@@ -4,29 +4,30 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
 import android.util.AttributeSet
+import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.View.OnTouchListener
-import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.ImageView
+import kotlinx.android.synthetic.main.layout_lock.view.*
 
 class SlideToLockButtonSimple @SuppressLint("ClickableViewAccessibility")
 constructor(context: Context, attrs: AttributeSet) : FrameLayout(context, attrs) {
-
     private var dX = 0f
     private var minX = 0f
     private var maxX = 0f
     private var centerX = 0f
     var listener: Listener? = null
+    var state: State = State.UNDEFINE
+        set(value) {
+            changeState(value)
+            field = value
+        }
 
     init {
-        val imgLock = ImageView(context)
-        imgLock.setImageResource(R.drawable.ic_android)
-        imgLock.setBackgroundColor(Color.BLUE)
-        imgLock.layoutParams = FrameLayout.LayoutParams(150, ViewGroup.LayoutParams.MATCH_PARENT)
-        addView(imgLock)
-
+        LayoutInflater.from(context).inflate(R.layout.layout_lock, this, true)
+        val imgLock = findViewById<ImageView>(R.id.image_lock)
         imgLock.setOnTouchListener(OnTouchListener { v, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
@@ -53,7 +54,6 @@ constructor(context: Context, attrs: AttributeSet) : FrameLayout(context, attrs)
             }
             true
         })
-        setBackgroundColor(Color.GREEN)
     }
 
 
@@ -83,9 +83,38 @@ constructor(context: Context, attrs: AttributeSet) : FrameLayout(context, attrs)
         lockView.animate().x(maxX).setDuration(100).start()
     }
 
+    private fun changeState(state: State) {
+        progress_loading.visibility = View.GONE
+        text_time.visibility = View.GONE
+
+        if (state == State.LOADING) {
+            progress_loading.visibility = View.VISIBLE
+        }
+        if (state == State.UNLOCK) {
+            moveLockToLeft(image_lock)
+            changeColor(image_lock)
+        }
+        if (state == State.LOCK) {
+            moveLockToRight(image_lock)
+            changeColor(image_lock)
+        }
+        if (state == State.READY_TO_LOCK) {
+            text_time.text = "100"
+            text_time.visibility = View.VISIBLE
+        }
+    }
+
+    fun setProgress(time: String) {
+        text_time.text = time
+    }
+
     interface Listener {
         fun onLock()
         fun onUnLock()
+    }
+
+    enum class State {
+        UNLOCK, LOADING, READY_TO_LOCK, LOCK, UNDEFINE
     }
 }
 
